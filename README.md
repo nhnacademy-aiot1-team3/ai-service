@@ -6,7 +6,9 @@
 
 ### Diagram
 
-![Screenshot from 2024-04-25 10-39-12](https://github.com/nhnacademy-aiot1-team3/ai-service/assets/143979590/f0767dcf-ab07-4ebf-b6dc-b0f242fc147c)
+<p align="center">
+  <img src="https://github.com/nhnacademy-aiot1-team3/ai-service/assets/143979590/f0767dcf-ab07-4ebf-b6dc-b0f242fc147c" />
+</p>
 
 ### 절차
 
