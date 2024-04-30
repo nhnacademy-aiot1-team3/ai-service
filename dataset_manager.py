@@ -57,7 +57,6 @@ class DatasetManager:
         df[self.sensor_type] = df[self.sensor_type].interpolate()
 
         self.print_df_info(df)
-        self.draw_table(df)
         
         return df
     

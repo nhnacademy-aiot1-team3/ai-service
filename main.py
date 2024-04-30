@@ -21,12 +21,12 @@ def main():
 
     model_manager = ModelManager(result_df, 'temperature')
     model_manager.split_datasets()
-    # model_manager.train_rf_model()
+    model_manager.train_rf_model()
     # model_manager.train_auto_arima_model()
     # model_manager.train_lstm_model()
     
     model_manager.train_lr_model()
-    accuracies = model_manager.accuracies
+    accuracies = model_manager.evaluate_models()
 
     # best_model = max(accuracies, key=lambda x: accuracies[x]['Explained Variance'])
     # best_metrics = accuracies[best_model]

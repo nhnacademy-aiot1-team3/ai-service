@@ -79,7 +79,7 @@ class ModelManager:
 
         aa_model = pm.auto_arima(self.train_datasets, d=n_diffs, seasonal=False, trace=True)
         self.models['AutoARIMA'] = aa_model
-        self.predictions['AutoARIMA'] = aa_model.predict(n_periods=len(self.test_datasets)).to_list()
+        self.predictions['AutoARIMA'] = pd.DataFrame(aa_model.predict(n_periods=len(self.test_datasets)).to_list(), index=self.test_datasets.index)
         self.y_tests['AutoARIMA'] = self.test_datasets
     
     def train_lr_model(self):
@@ -102,8 +102,8 @@ class ModelManager:
         lr_model.fit(X_train, y_train)
 
         self.models['LinearRegression'] = lr_model
-        self.predictions['LinearRegression'] = lr_model.predict(X_test)
-        self.y_tests['LinearRegression'] = pd.Series(y_test, index=y_test.index)
+        self.predictions['LinearRegression'] = pd.Series(lr_model.predict(X_test), index=y_test.index)
+        self.y_tests['LinearRegression'] = y_test
 
     def evaluate_models(self):
         for name, prediction in self.predictions.items():
@@ -119,14 +119,14 @@ class ModelManager:
                                 'Root Mean Squared Error': rmse,
                                 'R² Score': r2}
             
-            self.draw_prediction(name, y_test, y_pred)
+            self.draw_prediction(name, self.y_tests[name], prediction)
 
         return self.accuracies
     
     def draw_prediction(self, model_name, y_test, y_pred):
-        plt.plot(self.df.index, self.df.values)
-        plt.plot(y_test.index, y_test.values, label='Actual Values')
-        plt.plot(y_test.index, y_pred.values, label='Predicted Values')
+        plt.figure()
+        plt.plot(y_test.index, y_test, label='Actual Values')
+        plt.plot(y_test.index, y_pred, label='Predicted Values')
         plt.title(f'{model_name} Predictions vs Actual')
         plt.xlabel('Date')
         plt.ylabel('Temperature')
