@@ -52,13 +52,7 @@ class ModelManager:
         self.y_tests['RandomForest'] = self.y_test
 
     def train_lstm_model(self):
-
-        look_back = 52
         lstm_model = Sequential()
-
-        # x_train = np.reshape(self.X_train, (self.X_train.shape[0], self.X_train.shape[1]))
-        # print(x_train.shape)
-        # x_test = np.reshape(self.X_test, (self.X_test.shape[0], self.X_test.shape[1]))
 
         lstm_model.add(LSTM(50, activation='relu',
                        return_sequences=True, input_shape=(1, 1)))
@@ -118,7 +112,8 @@ class ModelManager:
                                 'Mean Squared Error': mse,
                                 'Root Mean Squared Error': rmse,
                                 'R² Score': r2}
-            
+            # if name == 'AutoARIMA':
+            #     self.models[name]
             self.draw_prediction(name, self.y_tests[name], prediction)
 
         return self.accuracies

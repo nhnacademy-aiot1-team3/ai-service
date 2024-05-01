@@ -20,7 +20,6 @@ class DatasetManager:
             |> filter(fn: (r) => r.branch == "{branch}")\
             |> filter(fn: (r) => r["endpoint"] == "{self.sensor_type}")\
             |> pivot(rowKey:["_time"], columnKey:["_field"], valueColumn:"_value")'
-            
         
         print("Query: ",query)
         result_df = query_api.query_data_frame(query=query)
@@ -93,8 +92,28 @@ class DatasetManager:
         plt.tight_layout()
         plt.show()
     
-    @staticmethod
-    def minute2hour(df):
+    # 초별 -> 분별 변환
+    def second2minute(self, df):
+        # 시간별로 column 만들기
+        df['year'] = df['date'].apply(lambda x : x.year)
+        df['month'] = df['date'].apply(lambda x : x.month)
+        df['day'] = df['date'].apply(lambda x : x.day)
+        df['hour'] = df['date'].apply(lambda x : x.hour)
+        df['minute'] = df['date'].apply(lambda x : x.minute)
+        df['second'] = df['date'].apply(lambda x : x.second)
+
+        # 시별로 aggregate
+        agg_df = df.groupby(['year', 'month', 'day', 'hour', 'minute', 'second']).agg({ \
+            'date': 'first', \
+            'organization': 'first', \
+            self.sensor_type : 'mean' \
+        }).reset_index()
+
+        agg_df['date'] = agg_df['date'].dt.strftime('%Y-%m-%d %H:mm:00')
+        return agg_df
+    
+    # 분별 -> 시별 변환
+    def minute2hour(self, df):
         # 시간별로 column 만들기
         df['year'] = df['date'].apply(lambda x : x.year)
         df['month'] = df['date'].apply(lambda x : x.month)
@@ -102,11 +121,11 @@ class DatasetManager:
         df['hour'] = df['date'].apply(lambda x : x.hour)
 
         # 시별로 aggregate
-        agg_df = df.groupby(['year', 'month', 'day', 'hour', 'place', 'site']).agg({ \
+        agg_df = df.groupby(['year', 'month', 'day', 'hour']).agg({ \
             'date': 'first', \
             'organization': 'first', \
-            'sensor_type': 'first', \
-            'sensor_value': 'mean' \
+            self.sensor_type : 'mean' \
         }).reset_index()
 
         agg_df['date'] = agg_df['date'].dt.strftime('%Y-%m-%d %H:00:00')
+        return agg_df
