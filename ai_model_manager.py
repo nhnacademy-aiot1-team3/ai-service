@@ -8,6 +8,7 @@ from tensorflow.keras.models import Sequential  # type: ignore
 from tensorflow.keras.layers import LSTM, Dense  # type: ignore
 import matplotlib.pyplot as plt
 import pandas as pd
+import joblib
 
 class ModelManager:
     def __init__(self, df, sensor_type):
@@ -143,5 +144,5 @@ class ModelManager:
         plt.grid()
         plt.show()
 
-    # def save_model(self, best_model):
-    #     ss
+    def save_model(self):
+        joblib.dump(self.models['LinearRegression'], self.sensor_type+'_model.pkl')

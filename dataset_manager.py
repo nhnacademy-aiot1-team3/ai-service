@@ -16,7 +16,7 @@ class DatasetManager:
         query_api = self.client.query_api()
         
         query = f'from(bucket: "{self.bucket}")\
-            |> range(start: -4d)\
+            |> range(start: -7d)\
             |> filter(fn: (r) => r.branch == "{branch}")\
             |> filter(fn: (r) => r["endpoint"] == "{self.sensor_type}")\
             |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)\
@@ -31,7 +31,7 @@ class DatasetManager:
         query_api = self.client.query_api()
 
         query = f'from(bucket: "{self.bucket}")\
-                |> range(start: -4d)\
+                |> range(start: -7d)\
                 |> filter(fn: (r) => r["branch"] == "{branch}")\
                 |> filter(fn: (r) => r["endpoint"] == "{self.sensor_type}")\
                 |> filter(fn: (r) => r["phase"] == "total")\
@@ -71,6 +71,9 @@ class DatasetManager:
         if self.sensor_type=='electrical_energy':
             df = self.second2minute(df)
             df['date'] = pd.to_datetime(df['date'])
+        # else:
+            # df = self.minute2hour(df)
+
 
         # date를 index로 set하기
         df = df.set_index('date')
@@ -79,7 +82,6 @@ class DatasetManager:
         df[self.sensor_type] = df[self.sensor_type].interpolate()
 
         self.print_df_info(df)
-        self.draw_table(df)
         
         return df
     
