@@ -16,6 +16,7 @@ class ModelManager:
         self.models = {}
         self.predictions = {}
         self.accuracies = {}
+        self.X_tests = {}
         self.y_tests = {}
 
     def split_datasets(self):
@@ -49,11 +50,11 @@ class ModelManager:
         rf_model.fit(self.X_train, self.y_train)
         self.models['RandomForest'] = rf_model
         self.predictions['RandomForest'] = rf_model.predict(self.X_test)
+        self.X_tests['RandomForest'] = self.X_test
         self.y_tests['RandomForest'] = self.y_test
 
     def train_lstm_model(self):
         lstm_model = Sequential()
-
         lstm_model.add(LSTM(50, activation='relu',
                        return_sequences=True, input_shape=(1, 1)))
         lstm_model.add(Dense(1))
@@ -62,6 +63,7 @@ class ModelManager:
                        epochs=5, validation_data=(self.X_test, self.y_test))
         self.models['LSTM'] = lstm_model
         self.predictions['LSTM'] = lstm_model.predict(self.X_test)
+        self.X_tests['LSTM'] = self.X_test
         self.y_tests['LSTM'] = self.y_test
 
     def train_auto_arima_model(self):
@@ -74,8 +76,7 @@ class ModelManager:
         aa_model = pm.auto_arima(self.train_datasets, d=n_diffs, seasonal=False, trace=True)
         self.models['AutoARIMA'] = aa_model
         self.predictions['AutoARIMA'] = pd.DataFrame(aa_model.predict(n_periods=len(self.test_datasets)).to_list(), index=self.test_datasets.index)
-        self.y_tests['AutoARIMA'] = self.test_datasets
-    
+
     def train_lr_model(self):
         # linear regression model용 dataset 만들기
         split_ratio = int(len(self.df) * 0.9)
@@ -97,9 +98,11 @@ class ModelManager:
 
         self.models['LinearRegression'] = lr_model
         self.predictions['LinearRegression'] = pd.Series(lr_model.predict(X_test), index=y_test.index)
+        self.X_tests['LinearRegression'] = X_test
         self.y_tests['LinearRegression'] = y_test
 
     def evaluate_models(self):
+        accuracies = {}
         for name, prediction in self.predictions.items():
             evs = explained_variance_score(self.y_tests[name], prediction)
             mae = mean_absolute_error(self.y_tests[name], prediction)
@@ -107,24 +110,38 @@ class ModelManager:
             rmse = mean_squared_error(self.y_tests[name], prediction, squared=False)
             r2 = r2_score(self.y_tests[name], prediction)
 
-            self.accuracies[name] = {'Explained Variance': evs,
+            accuracies[name] = {'Explained Variance': evs,
                                 'Mean Absolute Error': mae,
                                 'Mean Squared Error': mse,
                                 'Root Mean Squared Error': rmse,
                                 'R² Score': r2}
-            # if name == 'AutoARIMA':
-            #     self.models[name]
-            self.draw_prediction(name, self.y_tests[name], prediction)
+            if name == 'AutoARIMA':
+                self.models[name].plot_diagnostics(figsize=(16,8))
+                plt.show()
+            else: self.draw_prediction(name, self.X_tests[name], self.y_tests[name], prediction)
 
-        return self.accuracies
+        return accuracies
     
-    def draw_prediction(self, model_name, y_test, y_pred):
+    def draw_prediction(self, model_name, X_test, y_test, y_pred):
+        X_test_sorted = y_test.index
+        y_test_sorted = y_test
+        y_pred_sorted = y_pred
+
+        if model_name=='RandomForest':
+            sorted_indices = np.argsort(X_test[:, 0])
+            X_test_sorted = X_test[sorted_indices]
+            y_test_sorted = y_test.iloc[sorted_indices]
+            y_pred_sorted = y_pred[sorted_indices]
+
         plt.figure()
-        plt.plot(y_test.index, y_test, label='Actual Values')
-        plt.plot(y_test.index, y_pred, label='Predicted Values')
+        plt.plot(X_test_sorted, y_test_sorted, label='Actual Values')
+        plt.plot(X_test_sorted, y_pred_sorted, label='Predicted Values')
         plt.title(f'{model_name} Predictions vs Actual')
         plt.xlabel('Date')
-        plt.ylabel('Temperature')
+        plt.ylabel(self.sensor_type)
         plt.legend()
         plt.grid()
         plt.show()
+
+    # def save_model(self, best_model):
+    #     ss
