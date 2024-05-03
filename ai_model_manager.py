@@ -32,7 +32,9 @@ class ModelManager:
 
         print('-'*30)
         print('X shape: ', X.shape)
+        print('X : ', X)
         print('y shape: ', y.shape)
+        print('y : ', y.head(10))
 
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
             X, y, test_size=0.1, random_state=42, shuffle=False)
@@ -43,6 +45,8 @@ class ModelManager:
         print('y_train : ', self.y_train[:10])
         print('-'*30)
         print('X_test : ', self.X_test[:10])
+        print('X_test type :', type(self.X_test))
+        print('X_test value type :', type(self.X_test[0,0]))
         print('-'*30)
         print('y_test : ', self.y_test[:10])
 
@@ -93,6 +97,9 @@ class ModelManager:
         mae_baseline = mean_absolute_error(y_train, y_pred_baseline)
         print("Mean Close Prices:", round(y_train.mean(), 2))
         print("Baseline MAE:", round(mae_baseline, 2))
+        print('-'*30)
+        print('LR X_test : ', X_test[:10])
+        print('LR X_test type :', type(X_test))
 
         lr_model = LinearRegression()
         lr_model.fit(X_train, y_train)
@@ -116,10 +123,6 @@ class ModelManager:
                                 'Mean Squared Error': mse,
                                 'Root Mean Squared Error': rmse,
                                 'R² Score': r2}
-            if name == 'AutoARIMA':
-                self.models[name].plot_diagnostics(figsize=(16,8))
-                plt.show()
-            else: self.draw_prediction(name, self.X_tests[name], self.y_tests[name], prediction)
 
         return accuracies
     
@@ -145,4 +148,4 @@ class ModelManager:
         plt.show()
 
     def save_model(self):
-        joblib.dump(self.models['LinearRegression'], self.sensor_type+'_model.pkl')
+        joblib.dump(self.models['LinearRegression'], self.sensor_type+'_model.joblib')
