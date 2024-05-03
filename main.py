@@ -1,60 +1,52 @@
+import threading
 from env_config import load_env_var
 from dataset_manager import DatasetManager
 from ai_model_manager import ModelManager
 from flask import Flask, request, jsonify
 import joblib
-import numpy as np
-from datetime import datetime
+import pandas as pd
+import schedule
+import time
 
 app = Flask(__name__)
-temp_model = joblib.load('temperature_model.pkl')
+temp_model = joblib.load('temperature_model.joblib')
 
-@app.route('/predict', methods=['POST'])
+@app.route('/predict/temp', methods=['POST'])
 def predict():
-    data = request.json.get('dates')
+    data = request.json
     print(data)
 
-    # Parse each date string into a datetime object
-    data = [datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S') for date_str in data]
-    data = np.array(data)
-    data = data.reshape(-1,1)
-    print(data)
+    df = pd.DataFrame(data)
+    df.columns=['date', 'temperature.L1']
+    df['date'] = pd.to_datetime(df['date'])
+    df['temperature.L1'] = df['temperature.L1'].astype(float)
+    df.set_index('date', inplace=True)
+    print(df)
+
+    features = df['temperature.L1'].values.reshape(-1, 1)
     
-    prediction = temp_model.predict(data)
+    prediction = temp_model.predict(features).tolist()
 
     response = {'prediction': prediction}
     return jsonify(response)
 
-# Main
-def main():
+def make_and_upload_model(sensor_type):
     accuracies = {}
     best_models = {}
     env_var_list = load_env_var()
 
-    dataset_manager_temp = DatasetManager(env_var_list['db_url'], env_var_list['token'], env_var_list['org'], env_var_list['bucket'], 'temperature')
-    temp_df = dataset_manager_temp.query_sensor_data('gyeongnam')
-    dataset_manager_temp.close_connection()
-    temp_df = dataset_manager_temp.data_preprocessing(temp_df)
+    dataset_manager = DatasetManager(env_var_list['db_url'], env_var_list['token'], env_var_list['org'], env_var_list['bucket'], sensor_type)
+    df = dataset_manager.query_sensor_data('gyeongnam')
+    dataset_manager.close_connection()
+    df = dataset_manager.data_preprocessing(df)
 
-    # dataset_manager_energy = DatasetManager(env_var_list['db_url'], env_var_list['token'], env_var_list['org'], env_var_list['bucket'], 'electrical_energy')
-    # energy_df = dataset_manager_energy.query_energy('gyeongnam')
-    # dataset_manager_energy.close_connection()
-    # energy_df = dataset_manager_energy.data_preprocessing(energy_df)
-
-    model_manager_temp = ModelManager(temp_df, 'temperature')
-    model_manager_temp.split_datasets()
-    model_manager_temp.train_rf_model()
-    model_manager_temp.train_lr_model()
-    accuracies['Temperature'] = model_manager_temp.evaluate_models()
-    best_models['Temperature'] = model_manager_temp.models['LinearRegression']
-    model_manager_temp.save_model()
-
-    # model_manager_energy = ModelManager(energy_df, 'electrical_energy')
-    # model_manager_energy.split_datasets()
-    # model_manager_energy.train_rf_model()
-    # model_manager_energy.train_lr_model()
-    # accuracies['Energy'] = model_manager_energy.evaluate_models()
-    # best_models['Energy'] = model_manager_energy.models['LinearRegression']
+    model_manager = ModelManager(df, sensor_type)
+    model_manager.split_datasets()
+    model_manager.train_rf_model()
+    model_manager.train_lr_model()
+    accuracies[sensor_type] = model_manager.evaluate_models()
+    best_models[sensor_type] = model_manager.models['LinearRegression']
+    model_manager.save_model()
 
     # 모든 모델 출력
     print('EVALUATION SCORES: ')
@@ -63,8 +55,17 @@ def main():
         for model, scores in models.items():
             print(f"{model}: {scores}")
         print('-'*30)
-    
-    app.run()
+
+# Main
+def main():
+    schedule.every(1).minutes.do(make_and_upload_model,'temperature')
+    # app.run()
+    flask_thread = threading.Thread(target=app.run)
+    flask_thread.start()
+
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
 
 if __name__ == '__main__':
     main()

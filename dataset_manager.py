@@ -71,9 +71,6 @@ class DatasetManager:
         if self.sensor_type=='electrical_energy':
             df = self.second2minute(df)
             df['date'] = pd.to_datetime(df['date'])
-        # else:
-            # df = self.minute2hour(df)
-
 
         # date를 index로 set하기
         df = df.set_index('date')
