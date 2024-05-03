@@ -1,0 +1,14 @@
+python-dotenv
+requests
+sklearn
+pmdarima
+tensorflow
+matplotlib
+pandas
+numpy
+seaborn
+flask
+joblib
+os
+influxdb-client
+schedule
