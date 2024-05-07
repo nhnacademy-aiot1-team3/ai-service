@@ -3,7 +3,6 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import explained_variance_score, mean_absolute_error, mean_squared_error, r2_score
 from sklearn.ensemble import RandomForestRegressor
-import pmdarima as pm
 from tensorflow.keras.models import Sequential  # type: ignore
 from tensorflow.keras.layers import LSTM, Dense  # type: ignore
 import matplotlib.pyplot as plt
@@ -71,16 +70,6 @@ class ModelManager:
         self.X_tests['LSTM'] = self.X_test
         self.y_tests['LSTM'] = self.y_test
 
-    def train_auto_arima_model(self):
-        kpss_diffs = pm.arima.ndiffs(self.train_datasets, alpha=0.05, test='kpss', max_d=5)
-        adf_diffs = pm.arima.ndiffs(self.train_datasets, alpha=0.05, test='adf', max_d=5)
-        n_diffs = max(kpss_diffs, adf_diffs)
-
-        print(f"Optimized 'd' = {n_diffs}")
-
-        aa_model = pm.auto_arima(self.train_datasets, d=n_diffs, seasonal=False, trace=True)
-        self.models['AutoARIMA'] = aa_model
-        self.predictions['AutoARIMA'] = pd.DataFrame(aa_model.predict(n_periods=len(self.test_datasets)).to_list(), index=self.test_datasets.index)
 
     def train_lr_model(self):
         # linear regression model용 dataset 만들기
