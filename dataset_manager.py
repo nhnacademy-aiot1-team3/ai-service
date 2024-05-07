@@ -1,4 +1,5 @@
 from influxdb_client import InfluxDBClient
+from datetime import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -10,6 +11,15 @@ class DatasetManager:
         self.client = InfluxDBClient(url=db_url, token=token, org=org, timeout=30_000)
         self.bucket = bucket
         self.sensor_type = sensor_type
+    
+    def start_end_time(self):
+        now = datetime.now()
+        start_time = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        start_iso = start_time.isoformat() + 'Z'
+        end_iso = now.isoformat() + 'Z'
+
+        return [start_iso, end_iso]
     
     # 온도 데이터 가져오기
     def query_sensor_data(self, branch):
@@ -29,9 +39,9 @@ class DatasetManager:
     # 전량 데이터 가져오기
     def query_energy(self, branch):
         query_api = self.client.query_api()
-
+        datetimes = self.start_end_time()
         query = f'from(bucket: "{self.bucket}")\
-                |> range(start: -7d)\
+                |> range(start: {datetimes[0]}, end: {datetimes[1]})\
                 |> filter(fn: (r) => r["branch"] == "{branch}")\
                 |> filter(fn: (r) => r["endpoint"] == "{self.sensor_type}")\
                 |> filter(fn: (r) => r["phase"] == "total")\
@@ -150,3 +160,43 @@ class DatasetManager:
 
         agg_df['date'] = agg_df['date'].dt.strftime('%Y-%m-%d %H:00:00')
         return agg_df
+    
+    # 이상치 제거
+    def outlier_processing(self, raw_dataset):
+        fig = plt.figure()
+
+        fig_1 = fig.add_subplot(1,2,1)
+        fig_2 = fig.add_subplot(1,2,2)
+
+        fig_1.set_title('Original Data Boxplot')
+        fig_1.boxplot(raw_dataset)
+        
+        print('-'*30)
+        print(np.percentile(raw_dataset,25))
+        print(np.percentile(raw_dataset,50))
+        print(np.median(raw_dataset))
+        print(np.percentile(raw_dataset,75))
+
+        iqr_value = np.percentile(raw_dataset,75) - np.percentile(raw_dataset,25)
+        print('IQR_value : {}'.format(iqr_value))
+
+        upper_bound = iqr_value * 1.5 + np.percentile(raw_dataset, 75)
+        print('upper_bound : {}'.format(upper_bound)) # 보다 큰 값은 이상치
+
+        lower_bound = np.percentile(raw_dataset,25) - iqr_value * 1.5
+        print('lower_bound : {}'.format(lower_bound)) # 보다 작은 값은 이상치
+
+        # 우리 데이터에서 이상치를 출력
+        print(raw_dataset[(raw_dataset > upper_bound) | (raw_dataset < lower_bound)])
+
+        result_data = raw_dataset[(raw_dataset<=upper_bound) & (raw_dataset >= lower_bound)]
+        print('이상치 제거 후 데이터 : {}'.format(result_data))
+        print('-'*30)
+
+        fig_2.set_title('Remove Outlier Data Boxplot')
+        fig_2.boxplot(result_data)
+
+        fig.tight_layout()
+        plt.show()
+
+        return result_data
