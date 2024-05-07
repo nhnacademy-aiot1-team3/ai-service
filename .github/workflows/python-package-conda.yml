@@ -28,13 +28,14 @@ jobs:
         
     - name: Install dependencies
       run: |
+        conda update conda -y
         conda install -y python=3.10
+        conda info --envs
         conda env update --file environment.yml --name base
+        conda activate myenv
     
     - name: Activate Conda Environment
       run: |
-        conda update conda
-        source activate myenv
         echo "CONDA_ENV=myenv" >> $GITHUB_ENV
     
     - name: Load environment parameters
