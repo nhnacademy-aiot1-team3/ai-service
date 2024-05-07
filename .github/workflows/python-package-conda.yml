@@ -33,6 +33,7 @@ jobs:
         conda env update --file environment.yml --name base
         conda info --envs
         conda init bash
+        source ~/.bashrc
         conda activate base
     
     - name: Activate Conda Environment
