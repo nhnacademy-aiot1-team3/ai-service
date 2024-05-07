@@ -9,6 +9,5 @@ numpy
 seaborn
 flask
 joblib
-os
 influxdb-client
 schedule
