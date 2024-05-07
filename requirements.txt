@@ -1,8 +1,6 @@
 python-dotenv
 requests
 scikit-learn
-pmdarima
-tensorflow
 matplotlib
 pandas
 numpy
