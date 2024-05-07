@@ -32,7 +32,7 @@ jobs:
         conda install -y python=3.10
         conda env update --file environment.yml --name base
         conda info --envs
-        conda init /usr/share/miniconda
+        conda init bash
         conda activate base
     
     - name: Activate Conda Environment
