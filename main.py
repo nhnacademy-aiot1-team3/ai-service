@@ -7,6 +7,7 @@ import joblib # type: ignore
 import pandas as pd
 import schedule # type: ignore
 import time
+from pathlib import Path
 
 app = Flask(__name__)
 
@@ -42,7 +43,6 @@ def make_and_upload_model(sensor_type):
 
     model_manager = ModelManager(df, sensor_type)
     model_manager.split_datasets()
-    model_manager.train_rf_model()
     model_manager.train_lr_model()
     accuracies[sensor_type] = model_manager.evaluate_models()
     best_models[sensor_type] = model_manager.models['LinearRegression']
@@ -58,7 +58,12 @@ def make_and_upload_model(sensor_type):
 
 # Main
 def main():
-    schedule.every(2).minutes.do(make_and_upload_model,'temperature')
+    file_path = Path("temperature_model.joblib")
+
+    if file_path.exists():
+        make_and_upload_model('temperature')
+    
+    schedule.every(5).minutes.do(make_and_upload_model,'temperature')
     
     flask_thread = threading.Thread(target=app.run('0.0.0.0', port=5000))
     flask_thread.start()
