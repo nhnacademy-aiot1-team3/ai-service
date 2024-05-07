@@ -2,10 +2,10 @@ import threading
 from env_config import load_env_var
 from dataset_manager import DatasetManager
 from ai_model_manager import ModelManager
-from flask import Flask, request, jsonify
-import joblib
+from flask import Flask, request, jsonify # type: ignore
+import joblib # type: ignore
 import pandas as pd
-import schedule
+import schedule # type: ignore
 import time
 
 app = Flask(__name__)
@@ -58,8 +58,8 @@ def make_and_upload_model(sensor_type):
 
 # Main
 def main():
-    schedule.every(1).minutes.do(make_and_upload_model,'temperature')
-    # app.run()
+    schedule.every(60).minutes.do(make_and_upload_model,'temperature')
+    
     flask_thread = threading.Thread(target=app.run)
     flask_thread.start()
 

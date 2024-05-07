@@ -1,4 +1,4 @@
-from influxdb_client import InfluxDBClient
+from influxdb_client import InfluxDBClient # type: ignore
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns

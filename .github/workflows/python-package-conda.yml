@@ -68,7 +68,9 @@ jobs:
         rm: false
 
     - name: Install python dependencies
-      run: pip install -r requirements.txt
+      run: |
+        pyhton -m pip install --upgrade pip
+        pip install -r requirements.txt
 
     - name : execute shell script
       uses: appleboy/ssh-action@master

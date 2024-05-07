@@ -1,6 +1,6 @@
 python-dotenv
 requests
-sklearn
+scikit-learn
 pmdarima
 tensorflow
 matplotlib
