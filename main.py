@@ -59,6 +59,7 @@ def make_and_upload_model(sensor_type):
 # Main
 def main():
     schedule.every(1).minutes.do(make_and_upload_model,'temperature')
+    schedule.every(1).minutes.do(make_and_upload_model, 'electrical_energy')
     # app.run()
     flask_thread = threading.Thread(target=app.run)
     flask_thread.start()
