@@ -56,5 +56,4 @@ jobs:
         port: 22
         script_stop: true
         script: |
-          pkill -f startup.sh
           nohup ./startup.sh &
