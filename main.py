@@ -60,7 +60,7 @@ def make_and_upload_model(sensor_type):
 def main():
     file_path = Path("temperature_model.joblib")
 
-    if file_path.exists():
+    if file_path.exists()==False:
         make_and_upload_model('temperature')
     
     schedule.every(5).minutes.do(make_and_upload_model,'temperature')
