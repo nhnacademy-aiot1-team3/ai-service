@@ -32,6 +32,7 @@ jobs:
         conda install -y python=3.10
         conda info --envs
         conda env update --file environment.yml --name base
+        source /opt/conda/etc/profile.d/conda.sh
         conda activate base
     
     - name: Activate Conda Environment
