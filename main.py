@@ -65,7 +65,7 @@ def main():
     
     schedule.every(5).minutes.do(make_and_upload_model,'temperature')
     
-    flask_thread = threading.Thread(target=app.run('0.0.0.0', port=5000))
+    flask_thread = threading.Thread(target=app.run, kwargs={'host': '0.0.0.0', 'port': 5000})
     flask_thread.start()
 
     while True:
