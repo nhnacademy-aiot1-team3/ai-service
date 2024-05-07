@@ -9,10 +9,10 @@ import schedule # type: ignore
 import time
 
 app = Flask(__name__)
-temp_model = joblib.load('temperature_model.joblib')
 
 @app.route('/predict/temp', methods=['POST'])
 def predict():
+    temp_model = joblib.load('temperature_model.joblib')
     data = request.json
     print(data)
 
