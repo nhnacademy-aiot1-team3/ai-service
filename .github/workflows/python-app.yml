@@ -56,4 +56,4 @@ jobs:
         port: 22
         script_stop: true
         script: |
-          nohup ./startup.sh &
+          nohup ./startup.sh > /dev/null 2>&1 &
