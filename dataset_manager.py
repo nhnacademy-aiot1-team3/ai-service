@@ -79,17 +79,10 @@ class DatasetManager:
         # date asia 시간대로 바꾸기
         df['date'] = pd.to_datetime(df['date']).dt.tz_convert('Asia/Seoul').dt.tz_localize(None)
 
-        # if self.sensor_type=='electrical_energy':
-        #     df = self.second2minute(df)
-        #     df['date'] = pd.to_datetime(df['date'])
-
         # date를 index로 set하기
         df = df.set_index('date')
 
         df = self.outlier_processing(df)
-
-        # # 결측지를 전체의 평균값으로 채우기
-        # df[self.sensor_type] = df[self.sensor_type].interpolate()
 
         self.print_df_info(df)
         
@@ -166,14 +159,7 @@ class DatasetManager:
     
     # 이상치 제거
     def outlier_processing(self, raw_dataset):
-        fig = plt.figure()
 
-        fig_1 = fig.add_subplot(1,2,1)
-        fig_2 = fig.add_subplot(1,2,2)
-
-        fig_1.set_title('Original Data Boxplot')
-        fig_1.boxplot(raw_dataset)
-        
         print('-'*30)
         print(np.percentile(raw_dataset,25))
         print(np.percentile(raw_dataset,50))
@@ -195,11 +181,5 @@ class DatasetManager:
         result_data = raw_dataset[(raw_dataset<=upper_bound) & (raw_dataset >= lower_bound)]
         print('이상치 제거 후 데이터 : {}'.format(result_data))
         print('-'*30)
-
-        fig_2.set_title('Remove Outlier Data Boxplot')
-        fig_2.boxplot(result_data)
-
-        fig.tight_layout()
-        plt.show()
 
         return result_data
