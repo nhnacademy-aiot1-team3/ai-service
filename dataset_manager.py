@@ -182,4 +182,5 @@ class DatasetManager:
         print('이상치 제거 후 데이터 : {}'.format(result_data))
         print('-'*30)
 
+        result_data[self.sensor_type] = result_data[self.sensor_type].interpolate()
         return result_data
