@@ -1,4 +1,5 @@
 from influxdb_client import InfluxDBClient # type: ignore
+from datetime import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -11,6 +12,15 @@ class DatasetManager:
         self.client = InfluxDBClient(url=db_url, token=token, org=org, timeout=30_000)
         self.bucket = bucket
         self.sensor_type = sensor_type
+    
+    def start_end_time(self):
+        now = datetime.now()
+        start_time = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        start_iso = start_time.isoformat() + 'Z'
+        end_iso = now.isoformat() + 'Z'
+
+        return [start_iso, end_iso]
     
     # 온도 데이터 가져오기
     def query_sensor_data(self, branch):
@@ -31,13 +41,16 @@ class DatasetManager:
     def query_energy(self, branch):
         query_api = self.client.query_api()
         datetimes = self.start_end_time()
+        datetimes = self.start_end_time()
         query = f'from(bucket: "{self.bucket}")\
+                |> range(start: {datetimes[0]}, stop: {datetimes[1]})\
                 |> range(start: {datetimes[0]}, stop: {datetimes[1]})\
                 |> filter(fn: (r) => r["branch"] == "{branch}")\
                 |> filter(fn: (r) => r["endpoint"] == "{self.sensor_type}")\
                 |> filter(fn: (r) => r["phase"] == "total")\
                 |> filter(fn: (r) => r["description"] == "w")\
                 |> group(columns: ["site"])\
+                |> aggregateWindow(every: 2m, fn: mean, createEmpty: false)\
                 |> aggregateWindow(every: 2m, fn: mean, createEmpty: false)\
                 |> yield(name: "sensor_value")'
         
