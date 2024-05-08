@@ -1,8 +1,9 @@
-from influxdb_client import InfluxDBClient
+from influxdb_client import InfluxDBClient # type: ignore
 from datetime import datetime
-import pandas as pd
+import pandas as pd # type: ignore
 import matplotlib.pyplot as plt
-import seaborn as sns
+import seaborn as sns # type: ignore
+import numpy as np
 
 # 데이터셋 받아오기 및 데이터 전처리 담당하는 클래스
 class DatasetManager:
@@ -41,13 +42,13 @@ class DatasetManager:
         query_api = self.client.query_api()
         datetimes = self.start_end_time()
         query = f'from(bucket: "{self.bucket}")\
-                |> range(start: {datetimes[0]}, end: {datetimes[1]})\
+                |> range(start: {datetimes[0]}, stop: {datetimes[1]})\
                 |> filter(fn: (r) => r["branch"] == "{branch}")\
                 |> filter(fn: (r) => r["endpoint"] == "{self.sensor_type}")\
                 |> filter(fn: (r) => r["phase"] == "total")\
                 |> filter(fn: (r) => r["description"] == "w")\
                 |> group(columns: ["site"])\
-                |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)\
+                |> aggregateWindow(every: 2m, fn: mean, createEmpty: false)\
                 |> yield(name: "sensor_value")'
         
         print("Query: ", query)
@@ -78,15 +79,17 @@ class DatasetManager:
         # date asia 시간대로 바꾸기
         df['date'] = pd.to_datetime(df['date']).dt.tz_convert('Asia/Seoul').dt.tz_localize(None)
 
-        if self.sensor_type=='electrical_energy':
-            df = self.second2minute(df)
-            df['date'] = pd.to_datetime(df['date'])
+        # if self.sensor_type=='electrical_energy':
+        #     df = self.second2minute(df)
+        #     df['date'] = pd.to_datetime(df['date'])
 
         # date를 index로 set하기
         df = df.set_index('date')
 
-        # 결측지를 전체의 평균값으로 채우기
-        df[self.sensor_type] = df[self.sensor_type].interpolate()
+        df = self.outlier_processing(df)
+
+        # # 결측지를 전체의 평균값으로 채우기
+        # df[self.sensor_type] = df[self.sensor_type].interpolate()
 
         self.print_df_info(df)
         
