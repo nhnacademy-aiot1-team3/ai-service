@@ -1,4 +1,4 @@
-from dotenv import load_dotenv
+from dotenv import load_dotenv # type: ignore
 import os
 
 def load_env_var():

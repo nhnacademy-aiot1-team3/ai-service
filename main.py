@@ -5,7 +5,7 @@ from ai_model_manager import ModelManager
 from flask import Flask, request, jsonify # type: ignore
 from pathlib import Path
 import joblib # type: ignore
-import pandas as pd # type: ignore
+import pandas as pd
 import schedule # type: ignore
 import time
 
@@ -66,7 +66,6 @@ def make_and_upload_model(sensor_type):
 
     model_manager = ModelManager(df, sensor_type)
     model_manager.split_datasets()
-    model_manager.train_rf_model()
     model_manager.train_lr_model()
     accuracies[sensor_type] = model_manager.evaluate_models()
     best_models[sensor_type] = model_manager.models['LinearRegression']
@@ -82,14 +81,18 @@ def make_and_upload_model(sensor_type):
 
 # Main
 def main():
-    file_path = Path("electrical_energy_model.joblib")
+    file_path_elect = Path("electrical_energy_model.joblib")
 
-    if file_path.exists()==False:
+    if file_path_elect.exists()==False:
         make_and_upload_model('electrical_energy')
 
     # schedule.every(1).minutes.do(make_and_upload_model,'temperature')
     schedule.every(3).minutes.do(make_and_upload_model, 'electrical_energy')
-    # app.run()
+
+    file_path = Path("temperature_model.joblib")
+    
+    schedule.every(5).minutes.do(make_and_upload_model,'temperature')
+    
     flask_thread = threading.Thread(target=app.run, kwargs={'host': '0.0.0.0', 'port': 5000})
     flask_thread.start()
 

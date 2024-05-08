@@ -1,14 +1,11 @@
 python-dotenv
 requests
-sklearn
-pmdarima
-tensorflow
+scikit-learn
 matplotlib
 pandas
 numpy
 seaborn
 flask
 joblib
-os
 influxdb-client
 schedule

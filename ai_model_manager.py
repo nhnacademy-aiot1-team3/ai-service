@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split # type: ignore
 from sklearn.metrics import explained_variance_score, mean_absolute_error, mean_squared_error, r2_score # type: ignore
 from sklearn.ensemble import RandomForestRegressor # type: ignore
 import matplotlib.pyplot as plt
-import pandas as pd # type: ignore
+import pandas as pd
 import joblib # type: ignore
 
 class ModelManager:

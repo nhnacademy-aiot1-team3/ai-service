@@ -1,6 +1,6 @@
 from influxdb_client import InfluxDBClient # type: ignore
 from datetime import datetime
-import pandas as pd # type: ignore
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns # type: ignore
 import numpy as np
@@ -30,7 +30,7 @@ class DatasetManager:
             |> range(start: -7d)\
             |> filter(fn: (r) => r.branch == "{branch}")\
             |> filter(fn: (r) => r["endpoint"] == "{self.sensor_type}")\
-            |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)\
+            |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\
             |> yield(name: "sensor_value")'
         
         print("Query: ",query)
