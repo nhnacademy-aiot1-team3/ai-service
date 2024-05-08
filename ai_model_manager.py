@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import joblib # type: ignore
 
+# 모델 생성, 학습 및 테스트 담당하는 클래스
 class ModelManager:
     def __init__(self, df, sensor_type):
         self.df = df
