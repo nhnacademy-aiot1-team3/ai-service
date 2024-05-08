@@ -2,17 +2,18 @@ import threading
 from env_config import load_env_var
 from dataset_manager import DatasetManager
 from ai_model_manager import ModelManager
-from flask import Flask, request, jsonify
-import joblib
+from flask import Flask, request, jsonify # type: ignore
+import joblib # type: ignore
 import pandas as pd
-import schedule
+import schedule # type: ignore
 import time
+from pathlib import Path
 
 app = Flask(__name__)
-temp_model = joblib.load('temperature_model.joblib')
 
 @app.route('/predict/temp', methods=['POST'])
 def predict():
+    temp_model = joblib.load('temperature_model.joblib')
     data = request.json
     print(data)
 
@@ -42,7 +43,6 @@ def make_and_upload_model(sensor_type):
 
     model_manager = ModelManager(df, sensor_type)
     model_manager.split_datasets()
-    model_manager.train_rf_model()
     model_manager.train_lr_model()
     accuracies[sensor_type] = model_manager.evaluate_models()
     best_models[sensor_type] = model_manager.models['LinearRegression']
@@ -58,9 +58,14 @@ def make_and_upload_model(sensor_type):
 
 # Main
 def main():
-    schedule.every(1).minutes.do(make_and_upload_model,'temperature')
-    # app.run()
-    flask_thread = threading.Thread(target=app.run)
+    file_path = Path("temperature_model.joblib")
+
+    if file_path.exists()==False:
+        make_and_upload_model('temperature')
+    
+    schedule.every(5).minutes.do(make_and_upload_model,'temperature')
+    
+    flask_thread = threading.Thread(target=app.run, kwargs={'host': '0.0.0.0', 'port': 5000})
     flask_thread.start()
 
     while True:

@@ -1,14 +1,11 @@
 import numpy as np
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import explained_variance_score, mean_absolute_error, mean_squared_error, r2_score
-from sklearn.ensemble import RandomForestRegressor
-import pmdarima as pm
-from tensorflow.keras.models import Sequential  # type: ignore
-from tensorflow.keras.layers import LSTM, Dense  # type: ignore
+from sklearn.linear_model import LinearRegression # type: ignore
+from sklearn.model_selection import train_test_split # type: ignore
+from sklearn.metrics import explained_variance_score, mean_absolute_error, mean_squared_error, r2_score # type: ignore
+from sklearn.ensemble import RandomForestRegressor # type: ignore
 import matplotlib.pyplot as plt
 import pandas as pd
-import joblib
+import joblib # type: ignore
 
 class ModelManager:
     def __init__(self, df, sensor_type):
@@ -57,30 +54,6 @@ class ModelManager:
         self.predictions['RandomForest'] = rf_model.predict(self.X_test)
         self.X_tests['RandomForest'] = self.X_test
         self.y_tests['RandomForest'] = self.y_test
-
-    def train_lstm_model(self):
-        lstm_model = Sequential()
-        lstm_model.add(LSTM(50, activation='relu',
-                       return_sequences=True, input_shape=(1, 1)))
-        lstm_model.add(Dense(1))
-        lstm_model.compile(optimizer='adam', loss='mean_squared_error')
-        lstm_model.fit(self.X_train, self.y_train, batch_size=1,
-                       epochs=5, validation_data=(self.X_test, self.y_test))
-        self.models['LSTM'] = lstm_model
-        self.predictions['LSTM'] = lstm_model.predict(self.X_test)
-        self.X_tests['LSTM'] = self.X_test
-        self.y_tests['LSTM'] = self.y_test
-
-    def train_auto_arima_model(self):
-        kpss_diffs = pm.arima.ndiffs(self.train_datasets, alpha=0.05, test='kpss', max_d=5)
-        adf_diffs = pm.arima.ndiffs(self.train_datasets, alpha=0.05, test='adf', max_d=5)
-        n_diffs = max(kpss_diffs, adf_diffs)
-
-        print(f"Optimized 'd' = {n_diffs}")
-
-        aa_model = pm.auto_arima(self.train_datasets, d=n_diffs, seasonal=False, trace=True)
-        self.models['AutoARIMA'] = aa_model
-        self.predictions['AutoARIMA'] = pd.DataFrame(aa_model.predict(n_periods=len(self.test_datasets)).to_list(), index=self.test_datasets.index)
 
     def train_lr_model(self):
         # linear regression model용 dataset 만들기
