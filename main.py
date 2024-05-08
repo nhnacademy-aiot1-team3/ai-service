@@ -37,7 +37,12 @@ def make_and_upload_model(sensor_type):
     env_var_list = load_env_var()
 
     dataset_manager = DatasetManager(env_var_list['db_url'], env_var_list['token'], env_var_list['org'], env_var_list['bucket'], sensor_type)
-    df = dataset_manager.query_sensor_data('gyeongnam')
+    
+    if sensor_type=='temperature':
+        df = dataset_manager.query_sensor_data('gyeongnam')
+    else:
+        df = dataset_manager.query_energy('gyeongnam')
+
     dataset_manager.close_connection()
     df = dataset_manager.data_preprocessing(df)
 
