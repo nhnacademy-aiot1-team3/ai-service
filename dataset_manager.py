@@ -286,6 +286,7 @@ class DatasetManager:
         print(raw_dataset[(raw_dataset > upper_bound) | (raw_dataset < lower_bound)])
 
         result_data = raw_dataset[(raw_dataset<=upper_bound) & (raw_dataset >= lower_bound)]
+        result_data[self.sensor_type] = result_data[self.sensor_type].interpolate()
         print('이상치 제거 후 데이터 : {}'.format(result_data))
         print('-'*30)
 
