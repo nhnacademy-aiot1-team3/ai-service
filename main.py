@@ -117,22 +117,22 @@ def main():
     file_path_temp = Path("temperature_model.joblib")
 
     # 모델 파일이 없는 경우 모델 생성 및 업로드
-    # if file_path_elect.exists()==False:
-    make_and_upload_model('electrical_energy')
+    if file_path_elect.exists()==False:
+        make_and_upload_model('electrical_energy')
     
-    # if file_path_temp.exists()==False:
-    make_and_upload_model('temperature')
+    if file_path_temp.exists()==False:
+        make_and_upload_model('temperature')
 
     # 주기적으로 모델 생성 및 업로드
-    # schedule.every(1).minutes.do(make_and_upload_model, 'electrical_energy')    
-    # schedule.every(1).minutes.do(make_and_upload_model,'temperature')
+    schedule.every(30).minutes.do(make_and_upload_model, 'electrical_energy')    
+    schedule.every(30).minutes.do(make_and_upload_model,'temperature')
     
-    # flask_thread = threading.Thread(target=app.run, kwargs={'host': '0.0.0.0', 'port': 5000})
-    # flask_thread.start()
+    flask_thread = threading.Thread(target=app.run, kwargs={'host': '0.0.0.0', 'port': 5000})
+    flask_thread.start()
 
-    # while True:
-    #     schedule.run_pending()
-    #     time.sleep(1)
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
 
 if __name__ == '__main__':
     main()
