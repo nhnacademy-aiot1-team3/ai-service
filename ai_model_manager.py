@@ -91,14 +91,21 @@ class ModelManager:
 
         # linear regression model용 dataset 만들기
         split_ratio = int(len(self.df) * 0.9)
-        lr_df = self.df
+        lr_df = self.df.copy()
+
+        # lagged feature 생성 및 값 shifting
         lr_df[self.sensor_type+'.L1'] = lr_df[self.sensor_type].shift(1)
         lr_df.dropna(inplace=True)
+
+        # target & feature 정의
         lr_y = lr_df[self.sensor_type]
         lr_X = lr_df.drop(columns=self.sensor_type)
+
+        # train & test 데이터 분리
         X_train, y_train = lr_X.iloc[:split_ratio], lr_y.iloc[:split_ratio]
         X_test, y_test = lr_X.iloc[split_ratio:], lr_y.iloc[split_ratio:]
 
+        # Baseline model
         y_pred_baseline = [y_train.mean()] * len(y_train)
         mae_baseline = mean_absolute_error(y_train, y_pred_baseline)
         print("Mean Close Prices:", round(y_train.mean(), 2))

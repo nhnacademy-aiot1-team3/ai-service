@@ -75,10 +75,10 @@ def make_and_upload_model(sensor_type):
 
     # 온도 센서 데이터 불러오기
     if sensor_type=='temperature':
-        df = dataset_manager.query_sensor_data('gyeongnam')
+        df = dataset_manager.query_sensor_data('nhnacademy')
     # 전기 에너지 센서 데이터 불러오기
     else:
-        df = dataset_manager.query_energy('gyeongnam')
+        df = dataset_manager.query_energy('nhnacademy')
 
     dataset_manager.close_connection()
 
