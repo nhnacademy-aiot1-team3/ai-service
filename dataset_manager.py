@@ -1,3 +1,5 @@
+from cProfile import label
+from unittest import skip
 from influxdb_client import InfluxDBClient # type: ignore
 from datetime import datetime
 import pandas as pd
@@ -67,8 +69,10 @@ class DatasetManager:
         
         query = f'from(bucket: "{self.bucket}")\
             |> range(start: -7d)\
-            |> filter(fn: (r) => r.branch == "{branch}")\
+            |> filter(fn: (r) => r["_measurement"] == "databo3")\
             |> filter(fn: (r) => r["endpoint"] == "{self.sensor_type}")\
+            |> filter(fn: (r) => r["branch"] == "{branch}")\
+            |> group(columns: ["branch"])\
             |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\
             |> yield(name: "sensor_value")'
         
@@ -92,11 +96,11 @@ class DatasetManager:
         datetimes = self.start_end_time()
         query = f'from(bucket: "{self.bucket}")\
                 |> range(start: {datetimes[0]}, stop: {datetimes[1]})\
-                |> filter(fn: (r) => r["branch"] == "{branch}")\
+                |> filter(fn: (r) => r["_measurement"] == "databo3")\
                 |> filter(fn: (r) => r["endpoint"] == "{self.sensor_type}")\
                 |> filter(fn: (r) => r["phase"] == "total")\
                 |> filter(fn: (r) => r["description"] == "w")\
-                |> group(columns: ["site"])\
+                |> group(columns: ["branch"])\
                 |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\
                 |> yield(name: "sensor_value")'
         
@@ -143,8 +147,12 @@ class DatasetManager:
         # date를 index로 set하기
         df = df.set_index('date')
 
+        # branch 컬럼을 integer 값으로 매핑하기
+        # branch_mapping = {label: idx for idx, label in enumerate(df['branch'].unique())}
+        # df['branch'] = df['branch'].map(branch_mapping)
+
         # 결측지를 전체의 평균값으로 채우기
-        df = self.outlier_processing(df)        
+        df = self.outlier_processing(df)
 
         # 가공된 dataframe의 정보 출력
         self.print_df_info(df)
@@ -265,28 +273,48 @@ class DatasetManager:
         Returns:
             DataFrame: 이상치를 제거하고 보간한 데이터 프레임.
         """
-        raw_dataset[self.sensor_type] = raw_dataset[self.sensor_type].interpolate()
-        
+        # 중복값 제거
+        raw_dataset = raw_dataset[~raw_dataset.index.duplicated(keep='first')]
+
+        # 누락된 시간대 생성
+        if self.sensor_type=='electrical_energy':
+            full_index = pd.date_range(start=raw_dataset.index.min(), end=raw_dataset.index.max(), freq='5min')
+        else:
+            full_index = pd.date_range(start=raw_dataset.index.min(), end=raw_dataset.index.max(), freq='H')
+
+        # reindexing
+        raw_dataset = raw_dataset.reindex(full_index)
+
+        # 누락된 row에 branch 값을 채우기
+        # raw_dataset['branch'].fillna(raw_dataset['branch'].mode()[0], inplace=True)
+
+        # nan 값에 평균값으로 채우기
+        mean_value = raw_dataset[self.sensor_type].mean(skipna=True)
+        raw_dataset[self.sensor_type].fillna(mean_value, inplace=True)
+         
+        raw_dataset[self.sensor_type] = raw_dataset[self.sensor_type].interpolate(method='linear')
+
         print('-'*30)
         print(np.percentile(raw_dataset,25))
         print(np.percentile(raw_dataset,50))
         print(np.median(raw_dataset))
         print(np.percentile(raw_dataset,75))
 
-        iqr_value = np.percentile(raw_dataset,75) - np.percentile(raw_dataset,25)
+        iqr_value = np.percentile(raw_dataset[self.sensor_type].dropna(), 75) - np.percentile(raw_dataset[self.sensor_type].dropna(), 25)
         print('IQR_value : {}'.format(iqr_value))
 
-        upper_bound = iqr_value * 1.5 + np.percentile(raw_dataset, 75)
+        upper_bound = iqr_value * 1.5 + np.percentile(raw_dataset[self.sensor_type].dropna(), 75)
         print('upper_bound : {}'.format(upper_bound)) # 보다 큰 값은 이상치
 
-        lower_bound = np.percentile(raw_dataset,25) - iqr_value * 1.5
+        lower_bound = np.percentile(raw_dataset[self.sensor_type].dropna(), 25) - iqr_value * 1.5
         print('lower_bound : {}'.format(lower_bound)) # 보다 작은 값은 이상치
 
-        # 우리 데이터에서 이상치를 출력
+        # 데이터에서 이상치를 출력
         print(raw_dataset[(raw_dataset > upper_bound) | (raw_dataset < lower_bound)])
 
-        result_data = raw_dataset[(raw_dataset<=upper_bound) & (raw_dataset >= lower_bound)]
-        result_data[self.sensor_type] = result_data[self.sensor_type].interpolate()
+        result_data = raw_dataset[(raw_dataset[self.sensor_type]<=upper_bound) & (raw_dataset[self.sensor_type] >= lower_bound)]
+        result_data[self.sensor_type].fillna(method='bfill', inplace=True)
+        result_data[self.sensor_type] = result_data[self.sensor_type].interpolate(method='linear')
         print('이상치 제거 후 데이터 : {}'.format(result_data))
         print('-'*30)
 
